@@ -4,7 +4,7 @@ class Crawler(object):
 	def __init__(self,url):
 		self.valid=True
 		try:
-			self.urlop = urllib.urlopen(url)
+			self.urlop = urllib.urlopen(url).readlines()
 		except IOError:
 			self.valid=False
 
@@ -27,11 +27,30 @@ class Crawler(object):
 	def download_file(self, url):
 		if not("f=" in url): 
 			raise IOError 
-		myfile=url[url.index("f=")+ 2:]
+		myfile = self.get_file_name(url)
 		(filename, headers) = urllib.urlretrieve(url, myfile)	
 		if headers['content-type']=='application/x-bittorrent':
-			return True
+			return myfile
+
 		else: 
 			raise IOError
 	
-	 		
+	def download_all_files(self):
+		succeded = 0;
+		lista = self.get_torrents()
+		downloaded_files = []		
+
+		if len(lista) != 0:
+			for torrent in lista:
+				file_name = self.download_file(torrent)
+				if file_name:
+					downloaded_files.append(file_name)
+					#succeded += 1
+
+			return downloaded_files
+
+		else:
+			raise IOError	
+
+	def get_file_name(self,url):
+			return url[url.index("f=")+ 2:]
