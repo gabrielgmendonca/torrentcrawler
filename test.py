@@ -2,61 +2,51 @@ import unittest
 import os
 from crawler import Crawler
 
-URL = "http://www.legittorrents.info/index.php?page=torrents&active=1&category=1&order=3&by=2&pages=2"
-
+domain = "http://www.legittorrents.info/"
+URL = "http://www.legittorrents.info/index.php?page=torrents&search=&category=1&active=1"
+line = '<td align="center" width="20" class="lista" style="text-align: center;"><a href="download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent"><img src="images/download.gif" border="0" alt="torrent"/></a>'
+url = "download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent"
+filename = "The+Tunnel+%282011%29+%28720p%29.torrent"
 
 class TestCrawler(unittest.TestCase):
-	
-	def test_invalid_url(self):
-		crawler = Crawler("abcd")
-		self.assertEqual(crawler.valid,False)
 
-	def test_valid_url(self):
-		crawler = Crawler(URL)
-		self.assertEqual(crawler.valid,True)
+    def test_invalid_url(self):
 
-	def test_find_torrent(self):
-		crawler = Crawler(URL)
-		self.assertEqual(len(crawler.get_torrents()),18)
-	
-	def test_find_torrent_called_twice(self):
-		crawler = Crawler(URL)
-		self.assertEqual(len(crawler.get_torrents()),18)
-		self.assertEqual(len(crawler.get_torrents()),18)
+	crawler = Crawler("blau",domain)
+	self.assertFalse(crawler.valid)
 
-	def test_url_from_line(self):
-		crawler = Crawler(URL)
-		self.assertEqual(crawler.get_torrent_url_from_line('<td align="center" width="20" class="lista" style="text-align: center;"><a href="download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent"><img src="images/download.gif" border="0"  alt="torrent"/></a>'),"download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent")
+    def test_valid_url(self):
 
-	def test_get_file_name_from_url(self):
-		crawler = Crawler(URL)
+	crawler = Crawler(URL,domain)
+	self.assertTrue(crawler.valid)
 
-		FILE_URL = "http://www.legittorrents.info/download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent"
-		FILE_NAME = "The+Tunnel+%282011%29+%28720p%29.torrent"
+    def test_get_torrent_url(self):
 
-		self.assertEqual(FILE_NAME, crawler.get_file_name(FILE_URL))
+        crawler = Crawler(URL,domain)
+        self.assertEqual(crawler.get_Torrent_URL(line),url)
 
-	def test_download_file(self):
-		crawler = Crawler(URL)
-		FILE_URL = "http://www.legittorrents.info/download.php?id=0819ccee9ebe25d7a02fe14496d58af10ef94aec&amp;f=The+Tunnel+%282011%29+%28720p%29.torrent"
-		FILE_NAME = "The+Tunnel+%282011%29+%28720p%29.torrent"
-		self.assertEqual(crawler.download_file(FILE_URL), FILE_NAME)
-		self.assertTrue(os.path.isfile(FILE_NAME))
+    def test_get_torrents(self):
 
-	def test_download_file_not_found(self):
-		crawler = Crawler(URL)
-		self.assertRaises(IOError,crawler.download_file,"http://www.legittorrents.info/oleola")
-	
-	def test_download_all_files_error(self):
-		crawler = Crawler("http://www.legittorrents.info/oleola")
-		self.assertRaises(IOError,crawler.download_all_files)
+	crawler = Crawler(URL,domain)
+	self.assertEqual(len(crawler.get_Torrents_List()),18)
 
-	def test_download_all_files_success(self):
-		crawler = Crawler(URL)
-		listBefore = map(crawler.get_file_name,crawler.get_torrents())
-		listAfter = crawler.download_all_files()
-		
-		self.assertEqual(sorted(listBefore), sorted(listAfter))
+    def test_get_filename(self):
+
+        crawler = Crawler(URL,domain)
+        self.assertEqual(filename,crawler.get_Filename(domain+url))
+
+    def test_download_file(self):
+
+        crawler = Crawler(URL,domain)
+        self.assertEqual(crawler.download_File(domain+url),filename)
+        self.assertTrue(os.path.isfile(filename))
+
+    def test_page_files(self):
+
+        crawler = Crawler(URL,domain)
+        target_links = map(crawler.get_Filename, crawler.get_Torrents_List())
+        dloaded_links = crawler.download_Page_Files()
+        self.assertEqual(sorted(target_links), sorted(dloaded_links))
 
 if __name__ == "__main__":
-	unittest.main()
+    unittest.main()

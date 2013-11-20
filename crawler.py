@@ -1,56 +1,58 @@
 import urllib
 
 class Crawler(object):
-	def __init__(self,url):
-		self.valid=True
-		try:
-			self.urlop = urllib.urlopen(url).readlines()
-		except IOError:
-			self.valid=False
 
-	def get_torrent_url_from_line(self,line):
-		begin = "a href=\""
-		end = ".torrent"
-		index=line.index(begin)
-		index2=line.index(end)
-		return line[index+len(begin):index2+len(end)]
+    def __init__(self,url,domain):
 
-	def get_torrents(self):
-		torrents = []
-		domain = "http://www.legittorrents.info/"
-		for line in self.urlop:
-			if (".torrent" in line):
-				torrents.append(domain + self.get_torrent_url_from_line(line))
-		
-		return torrents
+	try:
+	    self.urlop = urllib.urlopen(url).readlines()
+	    #Returns IOError if invalid URL
+	    self.valid = True
+	    self.domain = domain
+	except IOError:
+	    self.valid = False
 
-	def download_file(self, url):
-		if not("f=" in url): 
-			raise IOError 
-		myfile = self.get_file_name(url)
-		(filename, headers) = urllib.urlretrieve(url, myfile)	
-		if headers['content-type']=='application/x-bittorrent':
-			return myfile
+    def get_Torrent_URL(self,line):
 
-		else: 
-			raise IOError
-	
-	def download_all_files(self):
-		succeded = 0;
-		lista = self.get_torrents()
-		downloaded_files = []		
+	begin = "a href="
+	end = ".torrent"
+	index_begin = line.index(begin)+len(begin)+1
+	#Takes the start of the URL
+	index_end = line.index(end)+len(end)
+	#Takes the end of the URL
+	return line[index_begin:index_end]
+    
+    def get_Torrents_List(self):
 
-		if len(lista) != 0:
-			for torrent in lista:
-				file_name = self.download_file(torrent)
-				if file_name:
-					downloaded_files.append(file_name)
-					#succeded += 1
+	torrents = [] #List of torrent URLs
+	for line in self.urlop:
+            if ".torrent" in line:
+		torrents.append(self.domain+self.get_Torrent_URL(line))
+	return torrents
 
-			return downloaded_files
+    def get_Filename(self,url):
 
-		else:
-			raise IOError	
+	start = url.index("f=") + 2
+	return url[start:]
+    
+    def download_File(self,url):
 
-	def get_file_name(self,url):
-			return url[url.index("f=")+ 2:]
+	if not ("f=" in url): raise IOError #Not a download URL
+	myfile = self.get_Filename(url)
+	(filename, headers) = urllib.urlretrieve(url, myfile)
+	#Downloads the file from 'url' as 'myfile'
+	#Headers stores information about the file
+	if headers['content-type']=='application/x-bittorrent': return myfile
+	else: raise IOError #Error on download
+
+    def download_Page_Files(self):
+
+	lista = self.get_Torrents_List()
+	downloaded_files = []
+	if len(lista) != 0:
+            for torrent in lista:
+		dfile = self.download_File(torrent)
+		if dfile: downloaded_files.append(dfile)
+            return downloaded_files #Returns this for control purposes
+	else: raise IOError
+
